@@ -1,0 +1,18 @@
+# Segredos — nunca versionar
+.env
+
+# Artefatos gerados pelo time (gráficos, séries, checkpoints)
+time/data/*.png
+time/data/*.json
+time/data/*.sqlite
+
+# Guia da aula (material didático) — fica fora do repo do app
+imersao-multi-agentes-05.qmd
+imersao-multi-agentes-05.html
+imersao-multi-agentes-05_files/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

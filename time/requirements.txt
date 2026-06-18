@@ -1,0 +1,16 @@
+# time-analise — Aula 3 da Imersão Agentes Autônomos de IA
+# Parte da base da Aula 2 (LangGraph + Gemini grátis + coleta BCB/IBGE) e
+# acrescenta o que o time novo precisa: gráfico (matplotlib) e busca de
+# notícias na web (ddgs, sem chave de API). As variações são calculadas em
+# Python puro, sem biblioteca extra.
+# Versões fixadas nas vigentes e testadas em junho/2026.
+langgraph==1.2.4
+langgraph-checkpoint-sqlite==3.1.0
+langchain-google-genai==4.2.5
+python-bcb==0.3.6
+sidrapy==0.1.4
+pydantic==2.12.5
+requests==2.32.3
+python-dotenv==1.0.1
+matplotlib==3.10.9
+ddgs==9.14.4

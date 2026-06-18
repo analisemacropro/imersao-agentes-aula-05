@@ -1,0 +1,22 @@
+# Dashboard interativo — Aula 5 da Imersão Agentes Autônomos de IA.
+#
+# O dashboard REUSA o time multi-agente (pasta time/), então traz as
+# dependências do time mais o que a interface precisa: streamlit (o app web)
+# e pandas (para exibir a série como tabela). Versões fixadas e testadas em
+# junho/2026.
+#
+# --- o time (mesmas deps da Aula 3) ---
+langgraph==1.2.4
+langgraph-checkpoint-sqlite==3.1.0
+langchain-google-genai==4.2.5
+python-bcb==0.3.6
+sidrapy==0.1.4
+pydantic==2.12.5
+requests==2.32.3
+python-dotenv==1.0.1
+matplotlib==3.10.9
+ddgs==9.14.4
+
+# --- a interface (novo na Aula 5) ---
+streamlit==1.41.1
+pandas==2.2.3
