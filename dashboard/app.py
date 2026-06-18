@@ -134,8 +134,18 @@ with st.sidebar:
                "Como está o câmbio?", "Mostre a PMC"):
         st.code(ex, language=None)
     st.divider()
-    st.caption("O mesmo time multi-agente das aulas anteriores — agora sob "
-               "demanda, em vez de no boletim automático da Aula 4.")
+    st.caption("Como a resposta é montada")
+    st.markdown(
+        "Um time de agentes resolve o pedido em quatro etapas:\n\n"
+        "1. 🧮 **Analista** — coleta a série oficial (BCB/IBGE) e calcula as "
+        "variações (no mês, em 12 meses, no ano, média móvel).\n"
+        "2. 📊 **Visualizador** — desenha o gráfico das variações.\n"
+        "3. 📰 **Redator** — busca notícias recentes e resume o contexto.\n"
+        "4. 🔎 **Revisor** — confere se os números e as notícias batem e "
+        "escreve a leitura final.\n\n"
+        "Você acompanha cada etapa acontecendo na tela, e o resultado chega "
+        "repartido nas abas: análise, tabela, gráfico e notícias."
+    )
 
 # Histórico da conversa: cada turno guarda o pedido e o resultado extraído.
 historico = st.session_state.setdefault("historico", [])
