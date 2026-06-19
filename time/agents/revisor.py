@@ -55,12 +55,24 @@ def _montar_briefing(state: State, conflito_codigo: str | None,
     indicador = state["indicador"]
     pontos = state.get("pontos", [])
     variacoes = state.get("variacoes", {})
+    meta = state.get("meta_selic", {})
     graficos = state.get("graficos", [])
     noticias = state.get("noticias", [])
     contexto = state.get("contexto", "")
 
-    ult = pontos[-1] if pontos else {}
     linhas = [f"INDICADOR: {indicador}"]
+
+    # Caso especial da Selic: a leitura é a meta vigente e a última decisão do
+    # Copom — não há série de variações a relatar.
+    if meta.get("meta_atual") is not None:
+        linhas.append(f"META SELIC VIGENTE: {meta['meta_atual']}% a.a. "
+                      f"(desde {meta.get('desde')})")
+        mud = meta.get("mudanca")
+        if mud:
+            linhas.append(f"ÚLTIMA DECISÃO DO COPOM: de {mud['de']}% para "
+                          f"{mud['para']}% ({mud['delta_pp']:+} p.p.) em {mud['data']}")
+
+    ult = pontos[-1] if pontos else {}
     if ult:
         linhas.append(f"ÚLTIMO DADO: {ult.get('valor')} em {ult.get('data')} "
                       f"({len(pontos)} pontos coletados)")
@@ -118,9 +130,14 @@ def _relatorio_de_falha(state: State) -> str:
     pontos = state.get("pontos", [])
     avisos = state.get("avisos", [])
 
-    # `pontos` aqui já passou pela validação do analista; se está vazio, ou a
-    # coleta não trouxe nada, ou nada passou na validação. Em ambos não há série.
-    if not pontos:
+    # A Selic falha por um motivo diferente: ela não tem série de variações, e
+    # sim a meta (SGS 432) — então a mensagem certa fala da meta, não de série.
+    if indicador == "selic":
+        falta = ("não consegui ler a meta Selic vigente (SGS 432) — a fonte não "
+                 "respondeu ou não havia histórico no período")
+    elif not pontos:
+        # `pontos` já passou pela validação do analista; se está vazio, ou a
+        # coleta não trouxe nada, ou nada passou na validação. Não há série.
         falta = ("a coleta não trouxe dados válidos (a fonte não respondeu, ou "
                  "os valores não passaram na validação) — não há série para analisar")
     else:
@@ -143,15 +160,16 @@ def revisor(state: State) -> dict:
     log.info("revisor começou")
     pontos = state.get("pontos", [])
     variacoes = state.get("variacoes", {})
+    meta = state.get("meta_selic", {})
     tem_variacoes = bool(variacoes.get("variacoes"))
+    tem_meta = meta.get("meta_atual") is not None
 
     # PEÇA FALTANDO: caminho de falha. Não chamamos o modelo para "escrever um
     # relatório" sem o material — ele preencheria o buraco com números
     # inventados. Emitimos um relatório de falha honesto, escrito no código.
-    # A condição é OU: basta faltar a série OU as variações.
-    if not pontos or not tem_variacoes:
-        log.warning("revisor: falta dado essencial (pontos=%d, variações=%s) "
-                    "-> relatório de falha honesto", len(pontos), tem_variacoes)
+    # Há dois materiais válidos: as variações (maioria) ou a meta da Selic.
+    if not tem_variacoes and not tem_meta:
+        log.warning("revisor: sem variações nem meta da Selic -> falha honesta")
         return {
             "revisao": {"ok": False, "conflitos": ["coleta/variações incompletas"]},
             "relatorio": _relatorio_de_falha(state),
@@ -169,7 +187,9 @@ def revisor(state: State) -> dict:
     # no briefing (não muta o State; o reducer do grafo cuida da persistência).
     v = variacoes.get("variacoes", {})
     nota_checagem = None
-    if v.get("mensal") is None or v.get("doze_meses") is None:
+    # Só vale para o caminho de variações; na Selic (sem variações) a comparação
+    # mensal-vs-12m nem se aplica, então não geramos a nota.
+    if tem_variacoes and (v.get("mensal") is None or v.get("doze_meses") is None):
         nota_checagem = ("a comparação mensal vs. 12 meses não foi possível "
                          "(série curta — faltou a mensal ou a de 12 meses).")
 

@@ -45,9 +45,17 @@ def redator(state: State) -> dict:
     """
     indicador = state["indicador"]
     variacoes = state.get("variacoes", {}).get("variacoes", {})
+    meta = state.get("meta_selic", {})
 
     resumo_num = ""
-    if variacoes:
+    if meta.get("meta_atual") is not None:
+        # Caso Selic: o "número" é a meta e a última mudança, não variações.
+        mud = meta.get("mudanca")
+        resumo_num = f" A meta Selic está em {meta['meta_atual']}% a.a."
+        if mud:
+            resumo_num += (f" (última decisão: de {mud['de']}% para {mud['para']}%, "
+                           f"{mud['delta_pp']:+} p.p., em {mud['data']}).")
+    elif variacoes:
         mensal = variacoes.get("mensal")
         doze = variacoes.get("doze_meses")
         partes = []

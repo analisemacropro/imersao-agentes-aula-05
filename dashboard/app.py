@@ -74,12 +74,26 @@ def _mostrar_resultado(r: dict) -> None:
             st.caption(f"⚠️ {aviso}")
         return
 
-    # As variações como métricas no topo — a leitura rápida do indicador.
-    variacoes = r.get("variacoes") or {}
-    if variacoes:
-        cols = st.columns(len(variacoes))
-        for col, (nome, valor) in zip(cols, variacoes.items()):
-            col.metric(nome, f"{valor:+.2f}%" if isinstance(valor, (int, float)) else valor)
+    # CASO ESPECIAL — SELIC: não há série de variações, e sim a meta do Copom.
+    # Mostramos a meta vigente e a última decisão como métricas no topo (o
+    # `delta` do st.metric vira a seta verde/vermelha da mudança em p.p.).
+    meta = r.get("meta_selic") or {}
+    if meta.get("meta_atual") is not None:
+        mud = meta.get("mudanca") or {}
+        c1, c2 = st.columns(2)
+        c1.metric("Meta Selic", f"{meta['meta_atual']}% a.a.",
+                  delta=(f"{mud['delta_pp']:+} p.p." if mud else None))
+        if mud:
+            c2.metric("Última decisão do Copom",
+                      f"{mud['de']}% → {mud['para']}%", delta=f"em {mud['data']}",
+                      delta_color="off")
+    else:
+        # Demais indicadores: as variações como métricas (a leitura rápida).
+        variacoes = r.get("variacoes") or {}
+        if variacoes:
+            cols = st.columns(len(variacoes))
+            for col, (nome, valor) in zip(cols, variacoes.items()):
+                col.metric(nome, f"{valor:+.2f}%" if isinstance(valor, (int, float)) else valor)
 
     aba_texto, aba_tabela, aba_grafico, aba_noticias = st.tabs(
         ["📝 Análise", "🔢 Tabela", "📊 Gráfico", "📰 Notícias"])
@@ -89,12 +103,18 @@ def _mostrar_resultado(r: dict) -> None:
 
     with aba_tabela:
         pontos = r.get("pontos") or []
+        # Na Selic não há série; a "tabela" é o histórico de decisões do Copom.
+        historico = (r.get("meta_selic") or {}).get("historico") or []
         if pontos:
             df = pd.DataFrame(pontos)
             st.dataframe(df, use_container_width=True, hide_index=True)
             st.download_button("Baixar CSV", df.to_csv(index=False).encode("utf-8"),
                                file_name=f"{r.get('indicador','serie')}.csv",
                                mime="text/csv")
+        elif historico:
+            st.caption("Últimas decisões do Copom (a meta a cada mudança):")
+            df = pd.DataFrame(historico).rename(columns={"data": "data", "valor": "meta (% a.a.)"})
+            st.dataframe(df, use_container_width=True, hide_index=True)
         else:
             st.info("Sem série tabular para este pedido.")
 
@@ -102,6 +122,10 @@ def _mostrar_resultado(r: dict) -> None:
         grafico = r.get("grafico")
         if grafico and Path(grafico).is_file():
             st.image(grafico, use_container_width=True)
+        elif r.get("meta_selic", {}).get("meta_atual") is not None:
+            st.info("A Selic é uma meta que muda em reunião do Copom — não há "
+                    "série mensal para um gráfico de variações. Veja a meta e a "
+                    "última decisão acima.")
         else:
             st.info("Sem gráfico para este pedido.")
 
@@ -130,7 +154,7 @@ st.caption("Pergunte por um indicador em linguagem natural — o time de agentes
 with st.sidebar:
     st.subheader("Como usar")
     st.write("Digite um pedido no campo abaixo. Exemplos:")
-    for ex in ("Analise o IPCA", "Variações da Selic",
+    for ex in ("Analise o IPCA", "Decisão do Copom (Selic)",
                "Como está o câmbio?", "Mostre a PMC"):
         st.code(ex, language=None)
     st.divider()

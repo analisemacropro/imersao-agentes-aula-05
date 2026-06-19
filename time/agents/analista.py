@@ -26,7 +26,7 @@ def _ler_tools(tool_messages: list[ToolMessage]) -> dict:
     Cada tool publica um JSON diferente; reconhecemos pelo formato: a coleta traz
     'pontos', o cálculo de variações traz 'variacoes'.
     """
-    achado = {"pontos": [], "nome": "", "variacoes": {}, "erros": []}
+    achado = {"pontos": [], "nome": "", "variacoes": {}, "meta_selic": {}, "erros": []}
     for msg in tool_messages:
         try:
             c = json.loads(msg.content)
@@ -49,6 +49,8 @@ def _ler_tools(tool_messages: list[ToolMessage]) -> dict:
             achado["nome"] = c.get("serie_nome") or c.get("tabela_nome") or achado["nome"]
         if "variacoes" in c:  # veio do cálculo de variações
             achado["variacoes"] = c
+        if "meta_atual" in c:  # veio da decisao_copom (caso especial da Selic)
+            achado["meta_selic"] = c
     return achado
 
 
@@ -90,17 +92,29 @@ def analista(state: State) -> dict:
         )
         variacoes = {}
 
+    meta_selic = achado["meta_selic"]
     tem_variacoes = bool(variacoes.get("variacoes"))
-    log.info("analista terminou: %d pontos, variações=%s", len(pontos_limpos), tem_variacoes)
+    # A Selic é o caso especial: não tem variações, tem a meta + última mudança.
+    tem_meta = bool(meta_selic.get("meta_atual") is not None)
+    log.info("analista terminou: %d pontos, variações=%s, meta_selic=%s",
+             len(pontos_limpos), tem_variacoes, tem_meta)
 
-    # O handoff reflete o que de fato aconteceu: sem variações, o trabalho não
-    # chega pronto ao próximo. Assim o rastro do mural não mente.
-    handoff = ("analista → visualizador" if tem_variacoes
-               else "analista → (falha: sem variações)")
+    # O handoff reflete o que de fato aconteceu. Há dois caminhos de sucesso:
+    # variações (vai para o visualizador desenhar) ou meta da Selic (não há série
+    # mensal para plotar, então pula direto para o redator buscar notícias).
+    if tem_variacoes:
+        handoff = "analista → visualizador"
+    elif tem_meta:
+        # Selic: a meta não tem série de variações para desenhar, então o
+        # visualizador é pulado. O rótulo deixa isso explícito no mural.
+        handoff = "analista → redator (Selic: meta do Copom, sem gráfico)"
+    else:
+        handoff = "analista → (falha: sem dados)"
 
     return {
         "pontos": pontos_limpos,
         "variacoes": variacoes,
+        "meta_selic": meta_selic,
         "avisos": avisos,
         "handoffs": [handoff],
     }

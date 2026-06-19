@@ -12,6 +12,7 @@ guardrail do time: um agente não chama o que não é dele.
 """
 
 from tools.bcb_sgs import coletar_serie_sgs
+from tools.decisao_copom import decisao_copom
 from tools.grafico import plotar_variacoes
 from tools.ibge_catalogo import combinacao_sidra
 from tools.ibge_sidra import coletar_sidra, descrever_tabela_sidra
@@ -22,12 +23,15 @@ from tools.variacoes import calcular_variacoes
 # O analista coleta e calcula as variações. `combinacao_sidra` entrega a
 # combinação pronta dos indicadores de atividade (PMC/PIM/PMS), que exigem
 # tabela+variável+classificação específicas e não dá para adivinhar.
+# `decisao_copom` é o caso especial da Selic: meta vigente + última mudança,
+# em vez de variações (a Selic é uma meta que só muda em reunião do Copom).
 TOOLS_ANALISTA = [
     coletar_serie_sgs,
     combinacao_sidra,
     coletar_sidra,
     descrever_tabela_sidra,
     calcular_variacoes,
+    decisao_copom,
 ]
 
 # O visualizador só desenha — os números já estão no mural, postos pelo analista.
@@ -45,6 +49,7 @@ __all__ = [
     "coletar_sidra",
     "descrever_tabela_sidra",
     "calcular_variacoes",
+    "decisao_copom",
     "plotar_variacoes",
     "buscar_noticias",
     "PontoSerie",

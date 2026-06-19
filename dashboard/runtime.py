@@ -35,8 +35,10 @@ else:
     log.warning("pasta do time não encontrada em %s", TIME)
 
 # Rótulo amigável de cada nó do grafo, para a narração de progresso na tela.
+# (Na Selic o visualizador é pulado — o time não o aciona —, então o rótulo
+# dele simplesmente não aparece; os demais narram normalmente.)
 AGENTES = {
-    "analista": "🧮 Analista — coletando a série e calculando as variações…",
+    "analista": "🧮 Analista — coletando os dados e calculando…",
     "visualizador": "📊 Visualizador — desenhando o gráfico…",
     "redator": "📰 Redator — buscando notícias e resumindo o contexto…",
     "revisor": "🔎 Revisor — conferindo e escrevendo a resposta…",
@@ -98,10 +100,15 @@ def extrair(state: dict) -> dict:
       - pontos     -> tabela da série [{data, valor}]
       - graficos   -> caminho do PNG (a imagem)
       - variacoes  -> as leituras (M/M, 12m, no ano…) como métricas
+      - meta_selic -> caso especial Selic: a meta vigente + a última decisão
       - relatorio  -> o texto final do revisor
       - noticias   -> as manchetes com link
       - avisos     -> o que mereceu alerta no caminho (transparência)
     Devolve um dicionário plano, pronto para a tela ler sem conhecer o time.
+
+    A Selic é o caso especial do time: ela não tem série de variações nem
+    gráfico — tem a META do Copom. Por isso `meta_selic` precisa chegar à tela,
+    senão o dashboard mostraria só o texto e nada do número.
     """
     graficos = state.get("graficos") or []
     variacoes = state.get("variacoes") or {}
@@ -110,6 +117,7 @@ def extrair(state: dict) -> dict:
         "pontos": state.get("pontos") or [],
         "grafico": graficos[0] if graficos else None,
         "variacoes": variacoes.get("variacoes") or {},
+        "meta_selic": state.get("meta_selic") or {},
         "relatorio": state.get("relatorio") or "",
         "contexto": state.get("contexto") or "",
         "noticias": state.get("noticias") or [],

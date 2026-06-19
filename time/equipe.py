@@ -18,7 +18,7 @@ módulo seu o nome de um da stdlib.
 
 Uso:
     python equipe.py "analise o IPCA"
-    python equipe.py "calcule as variações da Selic"
+    python equipe.py "analise a Selic"   # caso especial: meta + decisão do Copom
 """
 
 import logging
@@ -59,7 +59,12 @@ def supervisor(state: State) -> str:
         log.info("supervisor: relatório pronto -> FIM")
         return END
 
-    tem_dados = bool(state.get("pontos")) and bool(state.get("variacoes", {}).get("variacoes"))
+    # Há dois desfechos de sucesso para o analista: VARIAÇÕES (a maioria dos
+    # indicadores → passa pelo visualizador) ou META DA SELIC (caso especial,
+    # sem série mensal para plotar → pula o visualizador).
+    tem_variacoes = bool(state.get("pontos")) and bool(state.get("variacoes", {}).get("variacoes"))
+    tem_meta = state.get("meta_selic", {}).get("meta_atual") is not None
+    tem_dados = tem_variacoes or tem_meta
     # "Já rodou?" pelo PREFIXO do handoff, não pela string exata — o rótulo varia
     # (sucesso vs. falha), mas começa sempre com "nome ". O espaço no fim do
     # prefixo evita casar um nome que seja início de outro.
@@ -70,20 +75,21 @@ def supervisor(state: State) -> str:
         log.info("supervisor: começo -> analista")
         return "analista"
 
-    # 3) Análise falhou (analista rodou, mas não há dados/variações): pula o
-    #    visualizador e o redator e manda o revisor relatar a falha honestamente.
+    # 3) Análise falhou (analista rodou, mas não há variações nem meta): pula
+    #    todos e manda o revisor relatar a falha honestamente.
     if not tem_dados:
         log.info("supervisor: análise falhou -> pula para o revisor")
         return "revisor"
 
-    # 4) Há variações, mas ainda não foram desenhadas? É a vez do visualizador.
-    if not rodou("visualizador"):
+    # 4) Há variações e ainda não foram desenhadas? É a vez do visualizador.
+    #    (No caso da Selic não há variações, então pulamos esta etapa.)
+    if tem_variacoes and not rodou("visualizador"):
         log.info("supervisor: variações prontas -> visualizador (gráfico)")
         return "visualizador"
 
-    # 5) Gráfico pronto, mas falta o contexto das notícias? É a vez do redator.
+    # 5) Falta o contexto das notícias? É a vez do redator.
     if not rodou("redator"):
-        log.info("supervisor: gráfico pronto -> redator (contexto)")
+        log.info("supervisor: dados prontos -> redator (contexto)")
         return "redator"
 
     # 6) Tudo pronto: revisor fecha.

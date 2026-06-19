@@ -1,14 +1,14 @@
-"""O que os três agentes compartilham: o modelo e o mini-loop de tools.
+"""O que os agentes compartilham: o modelo e o mini-loop de tools.
 
 Cada agente do time é, por dentro, o mesmo agente da Aula 2 — um modelo que
-decide qual tool chamar, num loop, até parar. Em vez de repetir esse loop três
-vezes (uma por agente), ele mora aqui, e cada agente só informa QUAIS tools tem
-e QUAL prompt segue.
+decide qual tool chamar, num loop, até parar. Em vez de repetir esse loop em
+cada agente, ele mora aqui, e cada agente só informa QUAIS tools tem e QUAL
+prompt segue.
 
 Manter o loop interno fora do grafo principal é uma decisão de desenho: o
 vai-e-vem de cada agente com suas tools é "memória por agente", e não precisa
-sujar o `State` global do time. O grafo da Aula 3 enxerga só o resultado limpo
-que cada agente publica — não a conversa que ele teve para chegar lá.
+sujar o `State` global do time. O grafo enxerga só o resultado limpo que cada
+agente publica — não a conversa que ele teve para chegar lá.
 """
 
 from pathlib import Path

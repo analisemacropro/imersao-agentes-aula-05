@@ -30,6 +30,7 @@ class State(TypedDict, total=False):
     # --- Memória compartilhada: o que cada agente publica para os outros ---
     pontos: list          # série coletada e validada [{data, valor}] (analista)
     variacoes: dict       # M/M, M/M-12, YTD, 12m, MM3M, tri + séries (analista)
+    meta_selic: dict      # caso especial Selic: meta vigente + última mudança (analista)
     graficos: list        # caminhos dos PNGs gerados (visualizador)
     noticias: list        # manchetes recentes [{titulo, fonte, data, url}] (redator)
     contexto: str         # leitura do redator sobre o que as notícias dizem
