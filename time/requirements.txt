@@ -10,7 +10,7 @@ langchain-google-genai==4.2.5
 python-bcb==0.3.6
 sidrapy==0.1.4
 pydantic==2.12.5
-requests==2.32.3
-python-dotenv==1.0.1
+requests==2.33.0
+python-dotenv==1.2.2
 matplotlib==3.10.9
 ddgs==9.14.4
